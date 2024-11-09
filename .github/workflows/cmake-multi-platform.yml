@@ -68,7 +68,7 @@ jobs:
         run: |
           cd curl-7.53.1
           ./configure --disable-shared --enable-optimize --enable-threaded-resolver --disable-libcurl-option --disable-ares --disable-rt --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib --without-winssl --without-ssl --without-libssh2 --without-nghttp2 --disable-cookies --without-ca-bundle --without-librtmp
-          make
+          mingw32-make
         shell: bash
 
       - name: Set up CMake build with custom libcurl
@@ -76,7 +76,7 @@ jobs:
           mkdir build
           cd build
           cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCURL_INCLUDE_DIR="${{ github.workspace }}/curl-7.53.1/include" -DCURL_LIBRARY="${{ github.workspace }}/curl-7.53.1/lib/.libs"
-          make
+          mingw32-make
         shell: bash
 
       - name: Package Artifact
