@@ -23,8 +23,6 @@ jobs:
             make
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-libcurl
-            mingw-w64-x86_64-pthreads
 
       - name: Download and Configure Custom libcurl
         shell: msys2 {0}
@@ -32,9 +30,10 @@ jobs:
           curl -LO https://curl.se/download/curl-7.53.1.tar.gz
           tar -xzf curl-7.53.1.tar.gz
           cd curl-7.53.1
-          ./configure --disable-shared --enable-optimize --enable-threaded-resolver \
-            --disable-libcurl-option --disable-ares --disable-rt --disable-ftp --disable-file \
-            --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet \
+          ./configure --host=x86_64-w64-mingw32 --disable-shared --enable-static \
+            --enable-optimize --enable-threaded-resolver --disable-libcurl-option \
+            --disable-ares --disable-rt --disable-ftp --disable-file --disable-ldap \
+            --disable-ldaps --disable-rtsp --disable-dict --disable-telnet \
             --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp \
             --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth \
             --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib \
@@ -45,7 +44,7 @@ jobs:
           cp -r include/curl "${{ github.workspace }}/curl-windows/include/"
           cp lib/.libs/libcurl.a "${{ github.workspace }}/curl-windows/lib/"
 
-      - name: Configure CMake
+      - name: Configure CMake for Windows
         shell: msys2 {0}
         run: |
           mkdir -p build
