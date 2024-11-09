@@ -1,16 +1,6 @@
-name: CMake Build on Windows with MSYS2
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # Allows manual trigger
-
 jobs:
   windows-build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,6 +13,11 @@ jobs:
             make
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
+
+      - name: Install additional packages
+        shell: msys2 {0}
+        run: |
+          pacman -Sy --noconfirm mingw-w64-x86_64-libidn2 mingw-w64-x86_64-libpsl
 
       - name: Download and Configure Custom libcurl
         shell: msys2 {0}
@@ -38,7 +33,7 @@ jobs:
             --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth \
             --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib \
             --without-winssl --without-ssl --without-libssh2 --without-nghttp2 \
-            --disable-cookies --without-ca-bundle --without-librtmp
+            --disable-cookies --without-ca-bundle --without-librtmp --disable-libidn
           make
           mkdir -p "${{ github.workspace }}/curl-windows/lib" "${{ github.workspace }}/curl-windows/include"
           cp -r include/curl "${{ github.workspace }}/curl-windows/include/"
@@ -63,7 +58,7 @@ jobs:
           cd build
           make
 
-      - name: Package Artifact
+      - name: Package Windows Artifact
         run: |
           cd build
           zip -r windows-build.zip .
