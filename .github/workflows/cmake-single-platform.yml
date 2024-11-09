@@ -31,9 +31,9 @@ jobs:
       - name: Download and Configure Custom libcurl
         shell: msys2 {0}
         run: |
-          curl -LO https://curl.se/download/curl-7.68.0.tar.gz
-          tar -xzf curl-7.68.0.tar.gz
-          cd curl-7.68.0
+          curl -LO https://curl.se/download/curl-7.85.0.tar.gz
+          tar -xzf curl-7.85.0.tar.gz
+          cd curl-7.85.0
           ./configure --host=x86_64-w64-mingw32 --disable-shared --enable-static \
           --enable-optimize --enable-threaded-resolver --disable-libcurl-option \
           --disable-ares --disable-rt --disable-ftp --disable-file --disable-ldap \
