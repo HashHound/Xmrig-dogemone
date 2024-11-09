@@ -34,11 +34,12 @@ jobs:
 
       - name: Setup MSYS2 and install dependencies (Windows)
         if: matrix.os == 'windows-latest'
+        shell: powershell
         run: |
           choco install msys2 --no-progress
-          set PATH=C:\msys64\usr\bin;C:\msys64\mingw64\bin;%PATH%
-          pacman -Sy --noconfirm
-          pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl
+          & "C:\msys64\usr\bin\bash" -c "pacman -Sy --noconfirm"
+          & "C:\msys64\usr\bin\bash" -c "pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl"
+          $Env:Path += ";C:\msys64\usr\bin;C:\msys64\mingw64\bin"
 
       - name: Configure CMake
         run: |
