@@ -1,0 +1,77 @@
+name: CMake Build on Windows with MSYS2
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-libcurl
+            mingw-w64-x86_64-pthreads
+
+      - name: Download and Configure Custom libcurl
+        shell: msys2 {0}
+        run: |
+          curl -LO https://curl.se/download/curl-7.53.1.tar.gz
+          tar -xzf curl-7.53.1.tar.gz
+          cd curl-7.53.1
+          ./configure --disable-shared --enable-optimize --enable-threaded-resolver \
+            --disable-libcurl-option --disable-ares --disable-rt --disable-ftp --disable-file \
+            --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet \
+            --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp \
+            --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth \
+            --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib \
+            --without-winssl --without-ssl --without-libssh2 --without-nghttp2 \
+            --disable-cookies --without-ca-bundle --without-librtmp
+          make
+          mkdir -p "${{ github.workspace }}/curl-windows/lib" "${{ github.workspace }}/curl-windows/include"
+          cp -r include/curl "${{ github.workspace }}/curl-windows/include/"
+          cp lib/.libs/libcurl.a "${{ github.workspace }}/curl-windows/lib/"
+
+      - name: Configure CMake
+        shell: msys2 {0}
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -G "Unix Makefiles" \
+            -DCMAKE_C_COMPILER=/mingw64/bin/gcc \
+            -DCMAKE_CXX_COMPILER=/mingw64/bin/g++ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCURL_INCLUDE_DIR="${{ github.workspace }}/curl-windows/include" \
+            -DCURL_LIBRARY="${{ github.workspace }}/curl-windows/lib/libcurl.a" \
+            -DCMAKE_EXE_LINKER_FLAGS="-L${{ github.workspace }}/curl-windows/lib -lcurl -lws2_32 -lwinpthread"
+
+      - name: Build Project
+        shell: msys2 {0}
+        run: |
+          cd build
+          make
+
+      - name: Package Artifact
+        run: |
+          cd build
+          zip -r windows-build.zip .
+        shell: bash
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-build.zip
+          path: build/windows-build.zip
