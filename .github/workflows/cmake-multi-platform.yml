@@ -1,0 +1,58 @@
+name: CMake on multiple platforms
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Enables manual trigger
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+        include:
+          - os: ubuntu-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libssl-dev libcurl4-openssl-dev build-essential
+
+      - name: Setup MSYS2 and install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install msys2 --no-progress
+          set PATH=C:\msys64\usr\bin;C:\msys64\mingw64\bin;%PATH%
+          pacman -Sy --noconfirm
+          pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -S . \
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        shell: bash
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+        shell: bash
+
+      - name: Test
+        working-directory: build
+        run: ctest --build-config ${{ matrix.build_type }}
+        shell: bash
