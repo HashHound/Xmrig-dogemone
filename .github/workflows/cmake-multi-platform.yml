@@ -1,11 +1,11 @@
-name: CMake Build with MSYS2 on Windows
+name: CMake Build with MSYS2 on Windows and Linux
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: # Enables manual trigger
+  workflow_dispatch: # Allows manual trigger
 
 jobs:
   ubuntu-build:
@@ -47,12 +47,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download and install MSYS2
+      - name: Download MSYS2
         run: |
-          curl -L -o msys2.exe https://repo.msys2.org/distrib/x86_64/msys2-x86_64-latest.exe
-          Start-Process -FilePath .\msys2.exe -ArgumentList '--root', 'C:\msys64', '--script', 'pacman -Syuu --noconfirm' -Wait
-          Start-Process -FilePath C:\msys64\usr\bin\bash.exe -ArgumentList '-c', 'pacman -Syu --noconfirm' -Wait
-          Start-Process -FilePath C:\msys64\usr\bin\bash.exe -ArgumentList '-c', 'pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl' -Wait
+          curl -L -o msys2.zip https://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20210725.tar.xz
+          7z x msys2.zip -aoa -omsys2
+          echo "Extracted MSYS2 files"
+
+      - name: Run MSYS2 Update
+        run: |
+          msys2\usr\bin\bash -lc "pacman -Syuu --noconfirm"
+          msys2\usr\bin\bash -lc "pacman -Syu --noconfirm"
+        shell: bash
+
+      - name: Install MSYS2 Packages
+        run: |
+          msys2\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl"
+        shell: bash
 
       - name: Add MSYS2 to PATH
         run: |
