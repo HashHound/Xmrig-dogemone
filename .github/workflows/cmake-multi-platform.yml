@@ -37,23 +37,25 @@ jobs:
         shell: powershell
         run: |
           choco install msys2 --no-progress
-          & "C:\msys64\usr\bin\bash" -c "pacman -Sy --noconfirm"
-          & "C:\msys64\usr\bin\bash" -c "pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl"
-          $Env:Path += ";C:\msys64\usr\bin;C:\msys64\mingw64\bin"
+          refreshenv
+          Start-Process -Wait -FilePath "C:\tools\msys64\usr\bin\bash.exe" -ArgumentList "-c 'pacman -Syuu --noconfirm'"
+          Start-Process -Wait -FilePath "C:\tools\msys64\usr\bin\bash.exe" -ArgumentList "-c 'pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl'"
+          echo "::add-path::C:\tools\msys64\usr\bin"
+          echo "::add-path::C:\tools\msys64\mingw64\bin"
 
       - name: Configure CMake
+        shell: bash
         run: |
           cmake -B build -S . \
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        shell: bash
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.build_type }}
         shell: bash
+        run: cmake --build build --config ${{ matrix.build_type }}
 
       - name: Test
+        shell: bash
         working-directory: build
         run: ctest --build-config ${{ matrix.build_type }}
-        shell: bash
