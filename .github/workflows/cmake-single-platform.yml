@@ -31,18 +31,19 @@ jobs:
       - name: Download and Configure Custom libcurl
         shell: msys2 {0}
         run: |
-          curl -LO https://curl.se/download/curl-7.53.1.tar.gz
-          tar -xzf curl-7.53.1.tar.gz
-          cd curl-7.53.1
+          curl -LO https://curl.se/download/curl-7.68.0.tar.gz
+          tar -xzf curl-7.68.0.tar.gz
+          cd curl-7.68.0
           ./configure --host=x86_64-w64-mingw32 --disable-shared --enable-static \
-            --enable-optimize --enable-threaded-resolver --disable-libcurl-option \
-            --disable-ares --disable-rt --disable-ftp --disable-file --disable-ldap \
-            --disable-ldaps --disable-rtsp --disable-dict --disable-telnet \
-            --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp \
-            --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth \
-            --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib \
-            --without-winssl --without-ssl --without-libssh2 --without-nghttp2 \
-            --disable-cookies --without-ca-bundle --without-librtmp --disable-libidn
+          --enable-optimize --enable-threaded-resolver --disable-libcurl-option \
+          --disable-ares --disable-rt --disable-ftp --disable-file --disable-ldap \
+          --disable-ldaps --disable-rtsp --disable-dict --disable-telnet \
+          --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp \
+          --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth \
+          --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib \
+          --without-winssl --without-ssl --without-libssh2 --without-nghttp2 \
+          --disable-cookies --without-ca-bundle --without-librtmp --without-libidn2 --without-libpsl
+
           make
           mkdir -p "${{ github.workspace }}/curl-windows/lib" "${{ github.workspace }}/curl-windows/include"
           cp -r include/curl "${{ github.workspace }}/curl-windows/include/"
