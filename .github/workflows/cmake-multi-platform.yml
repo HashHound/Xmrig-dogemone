@@ -45,35 +45,46 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install MSYS2
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up MSYS2 for Unix-like environment
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
           update: true
-          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl
+          install: >-
+            make
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-libtool
 
-      - name: Setup Environment and Configure CMake
-        shell: msys2 {0}
+      - name: Download libcurl
         run: |
-          # Set up the environment for MSYS2 and configure the project
-          cmake -B build -S . \
-          -DCMAKE_CXX_COMPILER=g++ \
-          -DCMAKE_C_COMPILER=gcc \
-          -DCMAKE_BUILD_TYPE=Release
+          curl -LO https://curl.se/download/curl-7.53.1.tar.gz
+          tar -xzf curl-7.53.1.tar.gz
+        shell: bash
 
-      - name: Build within MSYS2
-        shell: msys2 {0}
+      - name: Configure and Build Custom libcurl
         run: |
-          cmake --build build --config Release
+          cd curl-7.53.1
+          ./configure --disable-shared --enable-optimize --enable-threaded-resolver --disable-libcurl-option --disable-ares --disable-rt --disable-ftp --disable-file --disable-ldap --disable-ldaps --disable-rtsp --disable-dict --disable-telnet --disable-tftp --disable-pop3 --disable-imap --disable-smb --disable-smtp --disable-gopher --disable-manual --disable-ipv6 --disable-sspi --disable-crypto-auth --disable-ntlm-wb --disable-tls-srp --disable-unix-sockets --without-zlib --without-winssl --without-ssl --without-libssh2 --without-nghttp2 --disable-cookies --without-ca-bundle --without-librtmp
+          make
+        shell: bash
+
+      - name: Set up CMake build with custom libcurl
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCURL_INCLUDE_DIR="${{ github.workspace }}/curl-7.53.1/include" -DCURL_LIBRARY="${{ github.workspace }}/curl-7.53.1/lib/.libs"
+          make
+        shell: bash
 
       - name: Package Artifact
-        shell: bash
         run: |
           cd build
           zip -r windows-build.zip .
-          
+        shell: bash
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -86,6 +97,9 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
 
     steps:
+      - name: Create artifacts directory
+        run: mkdir -p ./artifacts
+
       - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v3
         with:
@@ -102,7 +116,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: "release-${{ github.run_id }}"
           release_name: "Automated Release ${{ github.run_id }}"
@@ -112,7 +126,7 @@ jobs:
       - name: Upload Ubuntu Artifact to Release
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/ubuntu-build.zip
@@ -122,7 +136,7 @@ jobs:
       - name: Upload Windows Artifact to Release
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./artifacts/windows-build.zip
