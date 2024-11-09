@@ -52,6 +52,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake mingw-w64
 
+      - name: Download and Extract Windows libcurl
+        run: |
+          curl -LO https://curl.se/download/curl-7.53.1.tar.gz
+          tar -xzf curl-7.53.1.tar.gz
+          cd curl-7.53.1
+          ./configure --host=x86_64-w64-mingw32 --disable-shared --enable-static --without-ssl --without-zlib
+          make
+          mkdir -p "${{ github.workspace }}/curl-windows"
+          cp -r include "${{ github.workspace }}/curl-windows/include"
+          cp lib/.libs/libcurl.a "${{ github.workspace }}/curl-windows/libcurl.a"
+
       - name: Configure CMake for Windows (Cross-Compilation)
         run: |
           mkdir -p build-windows
@@ -61,7 +72,9 @@ jobs:
             -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
             -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
             -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCURL_INCLUDE_DIR="${{ github.workspace }}/curl-windows/include" \
+            -DCURL_LIBRARY="${{ github.workspace }}/curl-windows/libcurl.a"
 
       - name: Build for Windows (Cross-Compilation)
         run: |
