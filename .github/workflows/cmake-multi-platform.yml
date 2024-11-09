@@ -46,33 +46,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download MSYS2
-        run: |
-          curl -L -o msys2.zip https://repo.msys2.org/distrib/x86_64/msys2-base-x86_64-20210725.tar.xz
-          7z x msys2.zip -aoa -omsys2
-          echo "Extracted MSYS2 files"
-
-      - name: Run MSYS2 Update
-        run: |
-          msys2\usr\bin\bash -lc "pacman -Syuu --noconfirm"
-          msys2\usr\bin\bash -lc "pacman -Syu --noconfirm"
-        shell: bash
-
-      - name: Install MSYS2 Packages
-        run: |
-          msys2\usr\bin\bash -lc "pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl"
-        shell: bash
-
-      - name: Add MSYS2 to PATH
-        run: |
-          echo "C:\msys64\usr\bin" >> $GITHUB_ENV
-          echo "C:\msys64\mingw64\bin" >> $GITHUB_ENV
+      
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl
 
       - name: Configure CMake
         shell: bash
-        env:
-          PATH: ${{ env.PATH }}:C:/msys64/usr/bin:C:/msys64/mingw64/bin
         run: |
           cmake -B build -S . \
           -DCMAKE_CXX_COMPILER=g++ \
@@ -81,8 +64,6 @@ jobs:
 
       - name: Build
         shell: bash
-        env:
-          PATH: ${{ env.PATH }}:C:/msys64/usr/bin:C:/msys64/mingw64/bin
         run: cmake --build build --config Release
 
       - name: Package Artifact
