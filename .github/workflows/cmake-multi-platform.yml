@@ -1,4 +1,4 @@
-name: CMake Build
+name: CMake Build with MSYS2 on Windows
 
 on:
   push:
@@ -47,24 +47,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install MSYS2 and set up environment
-        shell: powershell
+      - name: Download and install MSYS2
         run: |
-          choco install msys2 --no-progress
-          refreshenv
-          Start-Process -Wait -FilePath "C:\tools\msys64\usr\bin\bash.exe" -ArgumentList "-c 'pacman -Syuu --noconfirm'"
-          Start-Process -Wait -FilePath "C:\tools\msys64\usr\bin\bash.exe" -ArgumentList "-c 'pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl'"
+          curl -L -o msys2.exe https://repo.msys2.org/distrib/x86_64/msys2-x86_64-latest.exe
+          Start-Process -FilePath .\msys2.exe -ArgumentList '--root', 'C:\msys64', '--script', 'pacman -Syuu --noconfirm' -Wait
+          Start-Process -FilePath C:\msys64\usr\bin\bash.exe -ArgumentList '-c', 'pacman -Syu --noconfirm' -Wait
+          Start-Process -FilePath C:\msys64\usr\bin\bash.exe -ArgumentList '-c', 'pacman -S --noconfirm mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-curl' -Wait
 
       - name: Add MSYS2 to PATH
-        shell: powershell
         run: |
-          echo "C:\tools\msys64\usr\bin" >> $GITHUB_ENV
-          echo "C:\tools\msys64\mingw64\bin" >> $GITHUB_ENV
+          echo "C:\msys64\usr\bin" >> $GITHUB_ENV
+          echo "C:\msys64\mingw64\bin" >> $GITHUB_ENV
 
       - name: Configure CMake
         shell: bash
         env:
-          PATH: ${{ env.PATH }}:C:/tools/msys64/usr/bin:C:/tools/msys64/mingw64/bin
+          PATH: ${{ env.PATH }}:C:/msys64/usr/bin:C:/msys64/mingw64/bin
         run: |
           cmake -B build -S . \
           -DCMAKE_CXX_COMPILER=g++ \
@@ -74,7 +72,7 @@ jobs:
       - name: Build
         shell: bash
         env:
-          PATH: ${{ env.PATH }}:C:/tools/msys64/usr/bin:C:/tools/msys64/mingw64/bin
+          PATH: ${{ env.PATH }}:C:/msys64/usr/bin:C:/msys64/mingw64/bin
         run: cmake --build build --config Release
 
       - name: Package Artifact
@@ -93,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ubuntu-build, windows-build]
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    
+
     steps:
       - name: Download Ubuntu Artifact
         uses: actions/download-artifact@v3
