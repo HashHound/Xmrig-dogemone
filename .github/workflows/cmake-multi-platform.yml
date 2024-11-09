@@ -61,7 +61,7 @@ jobs:
           make
           mkdir -p "${{ github.workspace }}/curl-windows"
           cp -r include "${{ github.workspace }}/curl-windows/include"
-          cp lib/.libs/libcurl.a "${{ github.workspace }}/curl-windows/libcurl.a"
+          cp lib/.libs/libcurl.a "${{ github.workspace }}/curl-windows/lib/libcurl.a"
 
       - name: Configure CMake for Windows (Cross-Compilation)
         run: |
@@ -74,7 +74,8 @@ jobs:
             -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
             -DCMAKE_BUILD_TYPE=Release \
             -DCURL_INCLUDE_DIR="${{ github.workspace }}/curl-windows/include" \
-            -DCURL_LIBRARY="${{ github.workspace }}/curl-windows/libcurl.a"
+            -DCURL_LIBRARY="${{ github.workspace }}/curl-windows/lib/libcurl.a" \
+            -DCMAKE_EXE_LINKER_FLAGS="-L${{ github.workspace }}/curl-windows/lib -lcurl"
 
       - name: Build for Windows (Cross-Compilation)
         run: |
